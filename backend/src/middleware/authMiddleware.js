@@ -1,29 +1,29 @@
 const jwt = require("jsonwebtoken");
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-function authMiddleware(req, res, next) {
+module.exports = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Unauthorized" });
+  // If there IS a token, try to verify it
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.split(" ")[1];
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      // decoded should contain user info + tenantId if you set it when signing
+      req.user = decoded;
+      return next();
+    } catch (err) {
+      // In demo mode, if token is invalid, just fall through and use default user
+      console.log("JWT invalid, falling back to demo user");
+    }
   }
 
-  const token = authHeader.split(" ")[1];
+  // 🎯 Demo fallback: allow request with default admin + tenant 1
+  req.user = {
+    id: 1,
+    tenantId: 1,
+    role: "admin",
+  };
 
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-
-    req.user = {
-      userId: decoded.userId,
-      tenantId: decoded.tenantId,
-    };
-
-    next();
-  } catch (err) {
-    console.error("Auth error:", err);
-    return res.status(401).json({ message: "Invalid token" });
-  }
-}
-
-module.exports = authMiddleware;
+  return next();
+};
