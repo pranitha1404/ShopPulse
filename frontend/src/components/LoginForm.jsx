@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import api from "../api";
 
 const cardStyle = {
   background: "#020617",
@@ -38,19 +37,21 @@ const LoginForm = ({ onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    try {
-      const res = await api.post("/auth/login", { email, password });
-      const { token, tenantId } = res.data;
-      onLoginSuccess(token, tenantId);
-    } catch (err) {
+
+    // Hard-coded admin login for demo / assignment
+    if (email === "admin@example.com" && password === "password123") {
+      const fakeToken = "demo-token";
+      const tenantId = 1;
+      onLoginSuccess(fakeToken, tenantId);
+    } else {
       setError("Login failed. Check credentials.");
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
   return (
